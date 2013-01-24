@@ -1,31 +1,76 @@
 package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
-use strict;
-use warnings;
 use parent qw(Plack::Middleware);
-
+use Plack::Util::Accessor qw/
+    enable_profile
+    env_nytprof
+    profile_dir
+    profile_file
+    profile_id
+    nullfile
+    after_profile
+/;
+use File::Spec;
 use Time::HiRes;
-use Devel::NYTProf;
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
 our $VERSION = '0.01';
 
+sub is_code {
+    my $ref = shift;
+    return (ref($ref) eq 'CODE') ? 1 : 0;
+}
+
+sub prepare_app {
+    my $self = shift;
+
+    if (ref($self->enable_profile) eq '' && $self->enable_profile) {
+        $self->enable_profile(sub { 1 });
+    }
+    if ( !is_code($self->enable_profile) || !$self->enable_profile->() ) {
+        $self->enable_profile(sub { 0 });
+    }
+    $self->enable_profile->() and do {
+        $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+        require Devel::NYTProf;
+    };
+    is_code($self->profile_dir)
+        or $self->profile_dir(sub { '.' });
+    is_code($self->profile_file)
+        or $self->profile_file(
+            sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; } );
+    is_code($self->profile_id)
+        or $self->profile_id(sub { return Time::HiRes::gettimeofday; });
+    $self->nullfile
+        or $self->nullfile('nytprof.null.out');
+    is_code($self->after_profile)
+        or $self->after_profile(sub {});
+}
+
 sub call {
     my ( $self, $env ) = @_;
-    $self->start($env);
+
+    if ( $self->enable_profile->($self, $env) ) {
+        $self->start($env);
+    }
+
     my $res = $self->app->($env);
-    $self->report($env);
-    $self->end($env);
+
+    if ( $self->enable_profile->($self, $env) ) {
+        $self->report($env);
+        $self->end($env);
+    }
+
     $res;
 }
 
 sub start {
     my ( $self, $env ) = @_;
-    my $id = Time::HiRes::gettimeofday;
-    $env->{PROFILE_ID} = $id;
-    DB::enable_profile("/tmp/nytprof.$id.out");
+
+    $env->{PROFILE_ID} = $self->profile_id->($self, $env);
+    DB::enable_profile( $self->report_path($env) );
 }
 
 sub end {
@@ -34,11 +79,26 @@ sub end {
 
 sub report {
     my ( $self, $env ) = @_;
-    if ( my $id = $env->{PROFILE_ID} ) {
-        DB::enable_profile("/tmp/nyprof.null.out");
+
+    if ($env->{PROFILE_ID}) {
+        DB::enable_profile(
+            File::Spec->catfile(
+                $self->profile_dir->($self, $env),
+                $self->nullfile
+            )
+        );
         DB::disable_profile();
-        system "nytprofhtml", "-f", "/tmp/nytprof.$id.out", "--open";
+        $self->after_profile->($self, $env);
     }
+}
+
+sub report_path {
+    my ( $self, $env ) = @_;
+
+    return File::Spec->catfile(
+        $self->profile_dir->($self, $env),
+        $self->profile_file->($self, $env)
+    );
 }
 
 sub DESTROY {
