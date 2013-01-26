@@ -46,7 +46,7 @@ sub _setup_report_file_paths {
 
 sub _setup_enable_reporting {
     my $self = shift;
-    $self->enable_report(1) unless $self->enable_reporting;
+    $self->enable_reporting(1) unless $self->enable_reporting;
 }
 
 sub _setup_enable_profiler {
