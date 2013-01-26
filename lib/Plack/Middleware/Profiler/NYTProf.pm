@@ -125,16 +125,87 @@ __END__
 
 =head1 NAME
 
-Plack::Middleware::Profiler::NYTProf -
+Plack::Middleware::Profiler::NYTProf - Middleware for Profiling a Plack App
 
 =head1 SYNOPSIS
 
-  use Plack::Middleware::Profiler::NYTProf;
+    use Plack::Builder;
+
+    builder {
+        enable 'Profiler::NYTProf', enable_profile => 1;
+        [ '200', [], [ 'Hello Profiler' ] ];
+    };
 
 =head1 DESCRIPTION
 
-Plack::Middleware::Profiler::NYTProf is
+Plack::Middleware::Profiler::NYTProf helps you to get profiles of Plack App.
 
+=head1 OPTIONS
+
+NOTE that some options expect a code reference. Maybe, you feel it complicated. However that will enable to control them programmably. It is more useful to your apps.
+
+=over 4
+
+=item enable_profile
+
+default
+
+    sub { 0 }
+
+This option can receive both scalar and code reference.
+If you want to turn on the profile, you have to specify this option: 1 or code ref that return TRUE value.
+
+=item env_nytprof
+
+default
+
+    'start=no'
+
+This option set to $ENV{NYTPROF}. See L<Devel::NYTProf>: NYTPROF ENVIRONMENT VARIABLE section. Actualy, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazy for setting $ENV by option.
+
+=item profile_dir
+
+directory for files about profile.
+
+default
+
+    sub { '.' }
+
+=item profile_file
+
+file name about profile
+
+default
+
+    sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; }
+
+=item profile_id
+
+ID for every profile
+
+default
+
+    "$$\.". time(); # if you have Time::HiRes, use T::HR::gettimeofday instead.
+
+=item nullfile
+
+file name of dummy profile 
+
+default
+
+    'nytprof.null.out'
+
+=item after_profile
+
+proccess that execute after profile
+
+default
+
+    sub {}
+
+check C<examples> dir of this distribution.
+
+=back
 
 =head1 SOURCE AVAILABILITY
 
@@ -152,6 +223,8 @@ Many thanks to:
 Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
 
 =head1 SEE ALSO
+
+L<Devel::NYTProf>
 
 =head1 LICENSE
 
