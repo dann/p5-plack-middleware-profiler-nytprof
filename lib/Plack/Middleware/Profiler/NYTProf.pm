@@ -225,14 +225,14 @@ default
 =item profiling_result_dir 
 
 NYTProf write profile data to this directory.
-The default diretory is current directory.
+The default directory is current directory.
 This option is optional.
 
 default
 
     sub { '.' }
 
-=item profile_file
+=item profiling_result_file_name
 
 The file name about profile.
 This options is optional.
@@ -248,7 +248,7 @@ This option is optional.
 
 default
 
-    "$$\.". time(); # if you have Time::HiRes, use T::HR::gettimeofday instead.
+    sub { return $$ . "-" . Time::HiRes::gettimeofday; } )
 
 =item nullfile
 
@@ -262,17 +262,12 @@ default
 =item before_profile 
 
 This is the hook before profiling
+This option is optional.
 
 =item after_profile
 
 This is the hook after profiling
 This option is optional.
-
-default
-
-    sub {}
-
-check C<examples> dir of this distribution.
 
 =back
 
