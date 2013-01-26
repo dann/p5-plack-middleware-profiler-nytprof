@@ -12,7 +12,19 @@ use Plack::Util::Accessor qw/
     after_profile
 /;
 use File::Spec;
-use Time::HiRes;
+our $TIME_HIRES_AVAILABLE = undef;
+BEGIN {
+    eval { require Time::HiRes; };
+    $TIME_HIRES_AVAILABLE = ($@) ? 0 : 1;
+}
+sub _gen_id {
+    if ($TIME_HIRES_AVAILABLE) {
+        return "$$\.". Time::HiRes::gettimeofday;
+    }
+    else {
+        return "$$\.". time;
+    }
+}
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
@@ -42,7 +54,7 @@ sub prepare_app {
         or $self->profile_file(
             sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; } );
     is_code($self->profile_id)
-        or $self->profile_id(sub { return Time::HiRes::gettimeofday; });
+        or $self->profile_id(sub { _gen_id() });
     $self->nullfile
         or $self->nullfile('nytprof.null.out');
     is_code($self->after_profile)
