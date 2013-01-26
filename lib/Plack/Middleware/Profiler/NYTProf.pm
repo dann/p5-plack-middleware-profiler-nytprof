@@ -200,7 +200,6 @@ default
 
     sub { 1 }
 
-This option can receive both scalar and code reference.
 Use code reference if you want to enable profiling programmably 
 This option is optional.
 
