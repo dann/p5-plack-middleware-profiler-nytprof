@@ -2,115 +2,151 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
-use Plack::Util::Accessor qw/
-    enable_profile
+use Plack::Util::Accessor qw(
+    enable_profiler
+    enable_reporting
     env_nytprof
-    profile_dir
-    profile_file
-    profile_id
-    nullfile
+    generate_profile_id
+    output_dir
+    report_file_name
+    nullfile_name
+    before_profile
     after_profile
-/;
+);
 use File::Spec;
-our $TIME_HIRES_AVAILABLE = undef;
-BEGIN {
-    eval { require Time::HiRes; };
-    $TIME_HIRES_AVAILABLE = ($@) ? 0 : 1;
-}
-sub _gen_id {
-    if ($TIME_HIRES_AVAILABLE) {
-        return "$$\.". Time::HiRes::gettimeofday;
-    }
-    else {
-        return "$$\.". time;
-    }
-}
+use Time::HiRes;
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
-our $VERSION = '0.01';
-
-sub is_code {
-    my $ref = shift;
-    return (ref($ref) eq 'CODE') ? 1 : 0;
-}
+our $VERSION = '0.02';
 
 sub prepare_app {
     my $self = shift;
 
-    if (ref($self->enable_profile) eq '' && $self->enable_profile) {
-        $self->enable_profile(sub { 1 });
-    }
-    if ( !is_code($self->enable_profile) || !$self->enable_profile->() ) {
-        $self->enable_profile(sub { 0 });
-    }
-    $self->enable_profile->() and do {
-        $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
-        require Devel::NYTProf;
-    };
-    is_code($self->profile_dir)
-        or $self->profile_dir(sub { '.' });
-    is_code($self->profile_file)
-        or $self->profile_file(
-            sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; } );
-    is_code($self->profile_id)
-        or $self->profile_id(sub { _gen_id() });
-    $self->nullfile
-        or $self->nullfile('nytprof.null.out');
-    is_code($self->after_profile)
-        or $self->after_profile(sub {});
+    $self->_setup_enable_reporting;
+    $self->_setup_report_file_paths;
+    $self->_setup_profiling_hooks;
+    $self->_setup_profile_id;
+    $self->_setup_enable_profiler;
+    $self->_setup_profiler if $self->enable_profiler->();
+}
+
+sub _setup_profiler {
+    my $self = shift;
+    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    require Devel::NYTProf;
+}
+
+sub _setup_report_file_paths {
+    my $self = shift;
+    $self->_setup_output_dir;
+    $self->_setup_report_file_name;
+    $self->_setup_nullfile_name;
+}
+
+sub _setup_enable_reporting {
+    my $self = shift;
+    $self->enable_report(1) unless $self->enable_reporting;
+}
+
+sub _setup_enable_profiler {
+    my $self = shift;
+    $self->enable_profiler( sub {1} ) unless $self->enable_profiler;
+}
+
+sub _setup_output_dir {
+    my $self = shift;
+    $self->output_dir( sub {'/tmp'} ) unless is_code_ref( $self->output_dir );
+}
+
+sub _setup_profile_id {
+    my $self = shift;
+    $self->generate_profile_id( sub { return $$ . "-" . Time::HiRes::gettimeofday; } )
+        unless is_code_ref( $self->generate_profile_id );
+}
+
+sub _setup_report_file_name {
+    my $self = shift;
+    $self->report_file_name(
+        sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; } )
+        unless is_code_ref( $self->report_file_name );
+}
+
+sub _setup_nullfile_name {
+    my $self = shift;
+
+    $self->nullfile_name('nytprof.null.out') unless $self->nullfile_name;
+}
+
+sub _setup_profiling_hooks {
+    my $self = shift;
+    $self->before_profile( sub { } )
+        unless is_code_ref( $self->before_profile );
+    $self->after_profile( sub { } )
+        unless is_code_ref( $self->after_profile );
+
 }
 
 sub call {
     my ( $self, $env ) = @_;
 
-    if ( $self->enable_profile->($self, $env) ) {
-        $self->start($env);
+    if ( $self->enable_profiler->( $self, $env ) ) {
+        $self->before_profile->( $self, $env );
+        $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $self->enable_profile->($self, $env) ) {
-        $self->report($env);
-        $self->end($env);
+    if ( $self->enable_profiler->( $self, $env ) ) {
+        $self->stop_profiling($env);
+        $self->report($env) if $self->enable_reporting;
+        $self->after_profile->( $self, $env );
     }
 
     $res;
 }
 
-sub start {
+sub start_profiling {
     my ( $self, $env ) = @_;
 
-    $env->{PROFILE_ID} = $self->profile_id->($self, $env);
-    DB::enable_profile( $self->report_path($env) );
+    $env->{PROFILE_ID} = $self->generate_profile_id->( $self, $env );
+    DB::enable_profile( $self->report_file_path($env) );
 }
 
-sub end {
+sub stop_profiling {
     DB::disable_profile();
 }
 
 sub report {
     my ( $self, $env ) = @_;
 
-    if ($env->{PROFILE_ID}) {
-        DB::enable_profile(
-            File::Spec->catfile(
-                $self->profile_dir->($self, $env),
-                $self->nullfile
-            )
-        );
-        DB::disable_profile();
-        $self->after_profile->($self, $env);
-    }
+    return unless $env->{PROFILE_ID};
+
+    DB::enable_profile( $self->nullfile_path );
+    DB::disable_profile();
+
+    system "nytprofhtml", "-f", $self->report_file_path($env), "--open";
 }
 
-sub report_path {
+sub report_file_path {
     my ( $self, $env ) = @_;
 
     return File::Spec->catfile(
-        $self->profile_dir->($self, $env),
-        $self->profile_file->($self, $env)
+        $self->output_dir->( $self, $env ),
+        $self->report_file_name->( $self, $env )
     );
+}
+
+sub nullfile_path {
+    my ( $self, $env ) = @_;
+
+    return File::Spec->catfile( $self->output_dir->( $self, $env ),
+        $self->nullfile_name );
+}
+
+sub is_code_ref {
+    my $ref = shift;
+    return ( ref($ref) eq 'CODE' ) ? 1 : 0;
 }
 
 sub DESTROY {
@@ -120,6 +156,7 @@ sub DESTROY {
 1;
 
 __END__
+
 
 =encoding utf-8
 
@@ -132,7 +169,7 @@ Plack::Middleware::Profiler::NYTProf - Middleware for Profiling a Plack App
     use Plack::Builder;
 
     builder {
-        enable 'Profiler::NYTProf', enable_profile => 1;
+        enable 'Profiler::NYTProf';
         [ '200', [], [ 'Hello Profiler' ] ];
     };
 
@@ -211,20 +248,18 @@ check C<examples> dir of this distribution.
 
 This source is in Github:
 
-  http://github.com/dann/
+  http://github.com/dann/p5-plack-middleware-profiler-nytprof
 
 =head1 CONTRIBUTORS
 
-Many thanks to:
-
+Many thanks to: bayashi
 
 =head1 AUTHOR
 
-Takatoshi Kitano E<lt>kitano.tk@gmail.comE<gt>
+Takatoshi Kitano E<lt>kitano.tk {at} gmail.comE<gt>
+Dai Okabayashi
 
 =head1 SEE ALSO
-
-L<Devel::NYTProf>
 
 =head1 LICENSE
 
