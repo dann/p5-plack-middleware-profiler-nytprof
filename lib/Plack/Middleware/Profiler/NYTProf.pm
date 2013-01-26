@@ -56,7 +56,7 @@ sub _setup_enable_profiler {
 
 sub _setup_output_dir {
     my $self = shift;
-    $self->output_dir( sub {'/tmp'} ) unless is_code_ref( $self->output_dir );
+    $self->output_dir( sub {'.'} ) unless is_code_ref( $self->output_dir );
 }
 
 sub _setup_profile_id {
