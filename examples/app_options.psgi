@@ -8,17 +8,17 @@ my $app = sub {
 builder {
     # you should execute 'mkdir /tmp/profile' before invoking this PSGI app;
     enable_if { 1 } 'Profiler::NYTProf',
-        enable_profile => sub { 1 },
-        env_nytprof    => 'start=no:file=/tmp/profile/nytprof.out',
-        output_dir    => sub { '/tmp/profile' },
-        generate_report  => sub {
-            my ($self, $env) = @_;
-            system(
-                'nytprofhtml',
-                '-f', $self->report_path($env),
-                '-o', $self->profile_dir->(). '/nytprof',
-                '--open'
-            );
-        };
+        enable_profile       => sub { 1 },
+        env_nytprof          => 'start=no:file=/tmp/profile/nytprof.out',
+        profiling_result_dir => sub { '/tmp/profile' },
+        enable_reporting     => 1;
     $app;
 };
+
+=pod
+
+    check the report.
+
+    $ plackup -MPlack::App::Directory -e 'Plack::App::Directory->new({root => "./report"})->to_app'
+
+=cut
