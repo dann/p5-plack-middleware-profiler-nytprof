@@ -8,7 +8,7 @@ my $app = sub {
 builder {
     # you should execute 'mkdir /tmp/profile' before invoking this PSGI app;
     enable_if { 1 } 'Profiler::NYTProf',
-        enable_profiler => sub { 1 },
+        enable_profile => sub { 1 },
         env_nytprof    => 'start=no:file=/tmp/profile/nytprof.out',
         output_dir    => sub { '/tmp/profile' },
         generate_report  => sub {

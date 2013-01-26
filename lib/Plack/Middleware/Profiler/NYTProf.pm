@@ -3,12 +3,13 @@ use strict;
 use warnings;
 use parent qw(Plack::Middleware);
 use Plack::Util::Accessor qw(
-    enable_profiler
+    enable_profile
     enable_reporting
     env_nytprof
     generate_profile_id
-    output_dir
-    report_file_name
+    profiling_result_dir
+    report_dir
+    profiling_result_file_name
     nullfile_name
     before_profile
     after_profile
@@ -23,12 +24,13 @@ our $VERSION = '0.02';
 sub prepare_app {
     my $self = shift;
 
-    $self->_setup_enable_reporting;
-    $self->_setup_report_file_paths;
-    $self->_setup_profiling_hooks;
     $self->_setup_profile_id;
-    $self->_setup_enable_profiler;
-    $self->_setup_profiler if $self->enable_profiler->();
+    $self->_setup_profiling_file_paths;
+    $self->_setup_profiling_hooks;
+    $self->_setup_enable_profile;
+    $self->_setup_enable_reporting;
+    $self->_setup_report_dir;
+    $self->_setup_profiler if $self->enable_profile->();
 }
 
 sub _setup_profiler {
@@ -37,10 +39,10 @@ sub _setup_profiler {
     require Devel::NYTProf;
 }
 
-sub _setup_report_file_paths {
+sub _setup_profiling_file_paths {
     my $self = shift;
-    $self->_setup_output_dir;
-    $self->_setup_report_file_name;
+    $self->_setup_profiling_result_dir;
+    $self->_setup_profiling_result_file_name;
     $self->_setup_nullfile_name;
 }
 
@@ -49,27 +51,34 @@ sub _setup_enable_reporting {
     $self->enable_reporting(1) unless $self->enable_reporting;
 }
 
-sub _setup_enable_profiler {
+sub _setup_enable_profile {
     my $self = shift;
-    $self->enable_profiler( sub {1} ) unless $self->enable_profiler;
+    $self->enable_profile( sub {1} ) unless $self->enable_profile;
 }
 
-sub _setup_output_dir {
+sub _setup_profiling_result_dir {
     my $self = shift;
-    $self->output_dir( sub {'.'} ) unless is_code_ref( $self->output_dir );
+    $self->profiling_result_dir( sub {'.'} )
+        unless is_code_ref( $self->profiling_result_dir );
+}
+
+sub _setup_report_dir {
+    my $self = shift;
+    $self->report_dir( sub {'report'} ) unless is_code_ref( $self->report_dir );
 }
 
 sub _setup_profile_id {
     my $self = shift;
-    $self->generate_profile_id( sub { return $$ . "-" . Time::HiRes::gettimeofday; } )
+    $self->generate_profile_id(
+        sub { return $$ . "-" . Time::HiRes::gettimeofday; } )
         unless is_code_ref( $self->generate_profile_id );
 }
 
-sub _setup_report_file_name {
+sub _setup_profiling_result_file_name {
     my $self = shift;
-    $self->report_file_name(
+    $self->profiling_result_file_name(
         sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; } )
-        unless is_code_ref( $self->report_file_name );
+        unless is_code_ref( $self->profiling_result_file_name );
 }
 
 sub _setup_nullfile_name {
@@ -90,14 +99,14 @@ sub _setup_profiling_hooks {
 sub call {
     my ( $self, $env ) = @_;
 
-    if ( $self->enable_profiler->( $self, $env ) ) {
+    if ( $self->enable_profile->( $self, $env ) ) {
         $self->before_profile->( $self, $env );
         $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $self->enable_profiler->( $self, $env ) ) {
+    if ( $self->enable_profile->( $self, $env ) ) {
         $self->stop_profiling($env);
         $self->report($env) if $self->enable_reporting;
         $self->after_profile->( $self, $env );
@@ -110,7 +119,7 @@ sub start_profiling {
     my ( $self, $env ) = @_;
 
     $env->{PROFILE_ID} = $self->generate_profile_id->( $self, $env );
-    DB::enable_profile( $self->report_file_path($env) );
+    DB::enable_profile( $self->profiling_result_file_path($env) );
 }
 
 sub stop_profiling {
@@ -125,22 +134,23 @@ sub report {
     DB::enable_profile( $self->nullfile_path );
     DB::disable_profile();
 
-    system "nytprofhtml", "-f", $self->report_file_path($env), "--open";
+    system "nytprofhtml", "-f", $self->profiling_result_file_path($env),
+    '-o', $self->report_dir->();
 }
 
-sub report_file_path {
+sub profiling_result_file_path {
     my ( $self, $env ) = @_;
 
     return File::Spec->catfile(
-        $self->output_dir->( $self, $env ),
-        $self->report_file_name->( $self, $env )
+        $self->profiling_result_dir->( $self, $env ),
+        $self->profiling_result_file_name->( $self, $env )
     );
 }
 
 sub nullfile_path {
     my ( $self, $env ) = @_;
 
-    return File::Spec->catfile( $self->output_dir->( $self, $env ),
+    return File::Spec->catfile( $self->profiling_result_dir->( $self, $env ),
         $self->nullfile_name );
 }
 
@@ -179,7 +189,8 @@ Plack::Middleware::Profiler::NYTProf helps you to get profiles of Plack App.
 
 =head1 OPTIONS
 
-NOTE that some options expect a code reference. Maybe, you feel it complicated. However that will enable to control them programmably. It is more useful to your apps.
+NOTE that some options expect a code reference. Maybe, you feel it is complicated. 
+However that will enable to control them programmably. It is more useful to your apps.
 
 =over 4
 
@@ -187,22 +198,35 @@ NOTE that some options expect a code reference. Maybe, you feel it complicated. 
 
 default
 
-    sub { 0 }
+    sub { 1 }
 
 This option can receive both scalar and code reference.
-If you want to turn on the profile, you have to specify this option: 1 or code ref that return TRUE value.
+Use code reference if you want to enable profiling programmably 
+This option is optional.
+
+=item enable_reporting
+
+default
+
+    1
+
+Devel::NYTProf doesn't generate HTML profiling report if you set 0 to this option.
+This option is optional.
 
 =item env_nytprof
+
+This option set to $ENV{NYTPROF}. See L<Devel::NYTProf>: NYTPROF ENVIRONMENT VARIABLE section. 
+Actualy, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazy for setting $ENV by option.
 
 default
 
     'start=no'
 
-This option set to $ENV{NYTPROF}. See L<Devel::NYTProf>: NYTPROF ENVIRONMENT VARIABLE section. Actualy, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazy for setting $ENV by option.
+=item profiling_result_dir 
 
-=item profile_dir
-
-directory for files about profile.
+NYTProf write profile data to this directory.
+The default diretory is current directory.
+This option is optional.
 
 default
 
@@ -210,15 +234,17 @@ default
 
 =item profile_file
 
-file name about profile
+The file name about profile.
+This options is optional.
 
 default
 
     sub { my $id = $_[1]->{PROFILE_ID}; return "nytprof.$id.out"; }
 
-=item profile_id
+=item generate_profile_id
 
-ID for every profile
+Generate ID for every profile.
+This option is optional.
 
 default
 
@@ -226,15 +252,21 @@ default
 
 =item nullfile
 
-file name of dummy profile 
+The file name of dummy profile for NYTProf. 
+This option is optional.
 
 default
 
     'nytprof.null.out'
 
+=item before_profile 
+
+This is the hook before profiling
+
 =item after_profile
 
-proccess that execute after profile
+This is the hook after profiling
+This option is optional.
 
 default
 
