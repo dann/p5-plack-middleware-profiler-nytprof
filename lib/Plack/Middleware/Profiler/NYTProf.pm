@@ -19,7 +19,7 @@ use Time::HiRes;
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub prepare_app {
     my $self = shift;

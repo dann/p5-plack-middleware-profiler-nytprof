@@ -1,5 +1,8 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.03 Sun Jan 27 11:21:00 2013
+    * Fixed documentation and example files based on 0.02
+
 0.02 Sun Jan 27  3:21:00 2013
     * Added options to customize the location of profiling result files 
       and enabling profiler based on some conditions. 
