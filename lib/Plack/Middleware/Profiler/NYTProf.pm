@@ -160,7 +160,7 @@ sub is_code_ref {
 }
 
 sub DESTROY {
-    DB::finish_profile();
+    DB::finish_profile() if defined &{"DB::finish_profile"};
 }
 
 1;
