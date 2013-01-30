@@ -187,6 +187,12 @@ Plack::Middleware::Profiler::NYTProf - Middleware for Profiling a Plack App
 
 Plack::Middleware::Profiler::NYTProf helps you to get profiles of Plack App.
 
+Enabling this middleware will result in a huge performance penalty.
+It is intended for use in development only.
+
+Read L<Devel::NYTProf> documentation if you use it for production.
+Some options of Devel::NYTProf is useful to reduce profling overhead.
+
 =head1 OPTIONS
 
 NOTE that some options expect a code reference. Maybe, you feel it is complicated. 
