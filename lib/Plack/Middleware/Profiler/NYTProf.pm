@@ -99,14 +99,14 @@ sub _setup_profiling_hooks {
 sub call {
     my ( $self, $env ) = @_;
 
-    if ( $self->enable_profile->( $self, $env ) ) {
+    if ( $self->enable_profile->() ) {
         $self->before_profile->( $self, $env );
         $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $self->enable_profile->( $self, $env ) ) {
+    if ( $self->enable_profile->() ) {
         $self->stop_profiling($env);
         $self->report($env) if $self->enable_reporting;
         $self->after_profile->( $self, $env );
@@ -160,7 +160,7 @@ sub is_code_ref {
 }
 
 sub DESTROY {
-    DB::finish_profile();
+    DB::finish_profile() if defined &{"DB::finish_profile"};
 }
 
 1;
