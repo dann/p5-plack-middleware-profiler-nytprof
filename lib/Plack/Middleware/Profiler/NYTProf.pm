@@ -24,13 +24,13 @@ our $VERSION = '0.03';
 sub prepare_app {
     my $self = shift;
 
+    $self->_setup_profiler;
     $self->_setup_profile_id;
     $self->_setup_profiling_file_paths;
     $self->_setup_profiling_hooks;
     $self->_setup_enable_profile;
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
-    $self->_setup_profiler if $self->enable_profile->();
 }
 
 sub _setup_profiler {
