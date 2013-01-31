@@ -36,6 +36,7 @@ sub prepare_app {
 sub _setup_profiler {
     my $self = shift;
     $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    require Devel::NYTProf::Core;
     require Devel::NYTProf;
 }
 
