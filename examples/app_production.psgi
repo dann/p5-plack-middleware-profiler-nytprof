@@ -9,7 +9,10 @@ builder {
     env_nytprof          => 'start=no:addpid=0:blocks=0:slowops=0:file=/tmp/nytprof.out',
     profiling_result_dir => sub { '/tmp' },
     # Don't generate HTML report for production. Generate only NYTProf profiling output.
-    enable_reporting     => 0;
+    enable_reporting     => 0,
+    # Do sampling, Select some processes or Select some paths using enable_profile callbak.
+    enable_profile => sub { 1 } 
+    ;
  
   app->start;
 };
