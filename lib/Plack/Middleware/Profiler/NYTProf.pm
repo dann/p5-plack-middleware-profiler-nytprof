@@ -289,6 +289,10 @@ This option is optional.
 
 =back
 
+=head1 HOW TO SEE REPORT 
+
+  $ plackup -MPlack::App::Directory -e 'Plack::App::Directory->new({root => "./report"})->to_app'
+
 =head1 SOURCE AVAILABILITY
 
 This source is in Github:
