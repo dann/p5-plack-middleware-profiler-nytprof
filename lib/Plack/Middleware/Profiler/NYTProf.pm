@@ -30,13 +30,6 @@ sub prepare_app {
     $self->_setup_enable_profile;
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
-    $self->_setup_profiler if $self->enable_profile->();
-}
-
-sub _setup_profiler {
-    my $self = shift;
-    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
-    require Devel::NYTProf;
 }
 
 sub _setup_profiling_file_paths {
@@ -96,23 +89,35 @@ sub _setup_profiling_hooks {
 
 }
 
+my %SETUP_PROFILER;
 sub call {
     my ( $self, $env ) = @_;
 
-    if ( $self->enable_profile->() ) {
+    $self->_setup_profiler unless $SETUP_PROFILER{$$};
+
+    if ( $self->enable_profile->($env) ) {
         $self->before_profile->( $self, $env );
         $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $self->enable_profile->() ) {
+    if ( $self->enable_profile->($env) ) {
         $self->stop_profiling($env);
         $self->report($env) if $self->enable_reporting;
         $self->after_profile->( $self, $env );
     }
 
     $res;
+}
+
+sub _setup_profiler {
+    my $self = shift;
+
+    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    require Devel::NYTProf;
+    DB::disable_profile();
+    $SETUP_PROFILER{$$} = 1;
 }
 
 sub start_profiling {
