@@ -118,6 +118,9 @@ sub _setup_profiler {
     my $self = shift;
 
     $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    
+    # NYTPROF environment variable is set in Devel::NYTProf::Core
+    # so, we load Devel::NYTProf here.
     require Devel::NYTProf;
     DB::disable_profile();
     $PROFILER_SETUPED{$$} = 1;
