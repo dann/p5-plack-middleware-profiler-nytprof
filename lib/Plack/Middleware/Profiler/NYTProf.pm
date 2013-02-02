@@ -24,20 +24,12 @@ our $VERSION = '0.03';
 sub prepare_app {
     my $self = shift;
 
-    $self->_setup_profiler;
     $self->_setup_profile_id;
     $self->_setup_profiling_file_paths;
     $self->_setup_profiling_hooks;
     $self->_setup_enable_profile;
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
-}
-
-sub _setup_profiler {
-    my $self = shift;
-    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
-    require Devel::NYTProf::Core;
-    require Devel::NYTProf;
 }
 
 sub _setup_profiling_file_paths {
@@ -97,8 +89,11 @@ sub _setup_profiling_hooks {
 
 }
 
+my %SETUP_PROFILER;
 sub call {
     my ( $self, $env ) = @_;
+
+    $self->_setup_profiler unless $SETUP_PROFILER{$$};
 
     if ( $self->enable_profile->($env) ) {
         $self->before_profile->( $self, $env );
@@ -114,6 +109,15 @@ sub call {
     }
 
     $res;
+}
+
+sub _setup_profiler {
+    my $self = shift;
+
+    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    require Devel::NYTProf;
+    DB::disable_profile();
+    $SETUP_PROFILER{$$} = 1;
 }
 
 sub start_profiling {
