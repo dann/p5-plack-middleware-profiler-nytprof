@@ -97,14 +97,15 @@ sub call {
 
     $self->_setup_profiler unless $PROFILER_SETUPED{$$};
 
-    if ( $self->enable_profile->($env) ) {
+    my $is_profiler_enabled =  $self->enable_profile->($env); 
+    if ( $is_profiler_enabled ) {
         $self->before_profile->( $self, $env );
         $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $self->enable_profile->($env) ) {
+    if ( $is_profiler_enabled ) {
         $self->stop_profiling($env);
         $self->report($env) if $self->enable_reporting;
         $self->after_profile->( $self, $env );
