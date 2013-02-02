@@ -16,8 +16,9 @@ use Plack::Util::Accessor qw(
     before_profile
     after_profile
 );
+
 use File::Spec;
-use Time::HiRes;
+use Time::HiRes qw(gettimeofday);
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
@@ -64,7 +65,7 @@ sub _setup_report_dir {
 sub _setup_profile_id {
     my $self = shift;
     $self->generate_profile_id(
-        sub { return $$ . "-" . Time::HiRes::gettimeofday; } )
+        sub { return $$ . "-" . gettimeofday; } )
         unless is_code_ref( $self->generate_profile_id );
 }
 
