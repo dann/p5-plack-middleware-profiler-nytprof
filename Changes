@@ -1,9 +1,13 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
-0.05 Sun Feb 02 21:52:00 2013
+0.06 Sun Feb 03 00:44:00 2013
+    * Check profliling result file path before reporting
+    * Add psgi examples for production use
+
+0.05 Sat Feb 02 21:52:00 2013
     * Don't call enable_profile twice
 
-0.04 Sun Feb 02 19:50:00 2013
+0.04 Sat Feb 02 19:50:00 2013
     * Fixed profiling preforked app 
       Thanks to bayashi
     * Fixed the bug profiler is destroyed when it is disabled. 
