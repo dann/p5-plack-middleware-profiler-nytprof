@@ -57,7 +57,8 @@ sub _setup_profiling_result_dir {
 
 sub _setup_report_dir {
     my $self = shift;
-    $self->report_dir( sub {'report'} ) unless is_code_ref( $self->report_dir );
+    $self->report_dir( sub {'report'} )
+        unless is_code_ref( $self->report_dir );
 }
 
 sub _setup_profile_id {
@@ -89,11 +90,12 @@ sub _setup_profiling_hooks {
 
 }
 
-my %SETUP_PROFILER;
+my %PROFILER_SETUPED;
+
 sub call {
     my ( $self, $env ) = @_;
 
-    $self->_setup_profiler unless $SETUP_PROFILER{$$};
+    $self->_setup_profiler unless $PROFILER_SETUPED{$$};
 
     if ( $self->enable_profile->($env) ) {
         $self->before_profile->( $self, $env );
@@ -117,7 +119,7 @@ sub _setup_profiler {
     $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
     require Devel::NYTProf;
     DB::disable_profile();
-    $SETUP_PROFILER{$$} = 1;
+    $PROFILER_SETUPED{$$} = 1;
 }
 
 sub start_profiling {
@@ -140,7 +142,7 @@ sub report {
     DB::disable_profile();
 
     system "nytprofhtml", "-f", $self->profiling_result_file_path($env),
-    '-o', $self->report_dir->();
+        '-o', $self->report_dir->();
 }
 
 sub profiling_result_file_path {
