@@ -19,7 +19,7 @@ use Time::HiRes;
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub prepare_app {
     my $self = shift;
@@ -304,6 +304,8 @@ Takatoshi Kitano E<lt>kitano.tk {at} gmail.comE<gt>
 Dai Okabayashi
 
 =head1 SEE ALSO
+
+L<Devel::NYTProf> 
 
 =head1 LICENSE
 
