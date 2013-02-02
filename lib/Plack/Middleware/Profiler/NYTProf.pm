@@ -64,8 +64,7 @@ sub _setup_report_dir {
 
 sub _setup_profile_id {
     my $self = shift;
-    $self->generate_profile_id(
-        sub { return $$ . "-" . gettimeofday; } )
+    $self->generate_profile_id( sub { return $$ . "-" . gettimeofday; } )
         unless is_code_ref( $self->generate_profile_id );
 }
 
@@ -98,15 +97,15 @@ sub call {
 
     $self->_setup_profiler unless $PROFILER_SETUPED{$$};
 
-    my $is_profiler_enabled =  $self->enable_profile->($env); 
-    if ( $is_profiler_enabled ) {
+    my $is_profiler_enabled = $self->enable_profile->($env);
+    if ($is_profiler_enabled) {
         $self->before_profile->( $self, $env );
         $self->start_profiling($env);
     }
 
     my $res = $self->app->($env);
 
-    if ( $is_profiler_enabled ) {
+    if ($is_profiler_enabled) {
         $self->stop_profiling($env);
         $self->report($env) if $self->enable_reporting;
         $self->after_profile->( $self, $env );
@@ -119,7 +118,7 @@ sub _setup_profiler {
     my $self = shift;
 
     $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
-    
+
     # NYTPROF environment variable is set in Devel::NYTProf::Core
     # so, we load Devel::NYTProf here.
     require Devel::NYTProf;
@@ -146,7 +145,10 @@ sub report {
     DB::enable_profile( $self->nullfile_path );
     DB::disable_profile();
 
-    system "nytprofhtml", "-f", $self->profiling_result_file_path($env),
+    my $profiling_result_file = $self->profiling_result_file_path($env);
+    return unless ( -f $profiling_result_file );
+
+    system "nytprofhtml", "-f", $profiling_result_file,
         '-o', $self->report_dir->();
 }
 
