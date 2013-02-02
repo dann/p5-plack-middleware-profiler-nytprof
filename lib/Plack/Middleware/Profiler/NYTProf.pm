@@ -2,6 +2,8 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
+our $VERSION = '0.05';
+
 use Plack::Util::Accessor qw(
     enable_profile
     enable_reporting
@@ -18,8 +20,6 @@ use File::Spec;
 use Time::HiRes;
 
 use constant PROFILE_ID => 'psgix.profiler.nytprof.reqid';
-
-our $VERSION = '0.05';
 
 sub prepare_app {
     my $self = shift;
