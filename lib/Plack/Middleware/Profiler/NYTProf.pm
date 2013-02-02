@@ -203,6 +203,7 @@ It is intended for use in development only.
 
 Read L<Devel::NYTProf> documentation if you use it for production.
 Some options of Devel::NYTProf is useful to reduce profling overhead.
+See MAKING_NYTPROF_FASTER section of NYTProf's pod.
 
 =head1 OPTIONS
 
