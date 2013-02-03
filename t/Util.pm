@@ -4,6 +4,7 @@ use warnings;
 use parent qw(Exporter);
 use Test::More 0.98;
 use File::Temp ();
+use File::Spec;
 
 our @EXPORT = qw(simple_app tempdir path);
 
