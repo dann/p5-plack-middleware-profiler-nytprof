@@ -8,7 +8,7 @@ requires(
     'Time::HiRes'    => 0,
 );
 test_requires(
-    'Test::More'                   => 0,
+    'Test::More'                   => '0.98',
     'Test::LoadAllModules'         => 0,
     'Module::Install::AuthorTests' => 0,
     'File::Temp'                   => 0,
