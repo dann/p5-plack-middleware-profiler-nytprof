@@ -4,33 +4,28 @@ use Test::More;
 use Plack::Test;
 use Plack::Builder;
 use HTTP::Request::Common;
-use lib './t/lib';
-use ProfilerNYTProfUtil;
+use t::Util;
 
-my $app = Plack::Middleware::Profiler::NYTProf->wrap(
-    base_app(),
-    enable_reporting => 0,
-);
+subtest 'is profiling result created' => sub {
+    my $app = Plack::Middleware::Profiler::NYTProf->wrap( simple_app(),
+        enable_reporting => 0, );
 
-test_psgi $app, sub {
-    my $cb  = shift;
-    my $at_start = time();
-    my $res = $cb->( GET "/" );
-    my $at_end = time();
+    test_psgi $app, sub {
+        my $cb  = shift;
+        my $res = $cb->( GET "/" );
 
-    is $res->code, 200;
+        is $res->code, 200, "Response is returned successfully";
 
-    is -e "nytprof.out", 1, "exists nytprof.out";
-    unlink "nytprof.out";
+        is -e "nytprof.out", 1, "Exists nytprof.out";
 
-    my $regex = qr/nytprof\.\d+\-(\d+)\.\d+\.out/;
-    for my $file ( glob("nytprof*.out") ) {
-        like $file, $regex, "exists result file: $file";
-        my ($time) = ($file =~ m!$regex!);
-        ok ($time >= $at_start && $time <= $at_end), "result time";
-    }
+        my $regex = qr/nytprof\.\d+\-(\d+)\.\d+\.out/;
+        for my $file ( glob("nytprof.*.out") ) {
+            like $file, $regex, "Exists profiling result file: $file";
+        }
+    };
+
+    unlink glob("nytprof*.out");
+
 };
-
-unlink glob("nytprof*.out");
 
 done_testing;
