@@ -9,7 +9,6 @@ requires(
 );
 test_requires(
     'Test::More'                   => '0.98',
-    'Test::LoadAllModules'         => 0,
     'Module::Install::AuthorTests' => 0,
     'File::Temp'                   => 0,
     'File::Spec'                   => 0,
