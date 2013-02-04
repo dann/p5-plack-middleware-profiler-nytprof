@@ -18,7 +18,7 @@ subtest 'Change report_dir location' => sub {
         report_dir       => sub {$report_dir},
     );
 
-    isnt -e path( $report_dir, "index.html" ), 1,
+    ok !-e path( $report_dir, "index.html" ),
         "Doesn't exists report directory before profiling";
 
     test_psgi $app, sub {
@@ -27,8 +27,8 @@ subtest 'Change report_dir location' => sub {
 
         is $res->code, 200, "Response is returned successfully";
 
-        is -e path( $result_dir, "nytprof.out" ), 1, "Exists nytprof.out";
-        is -e path( $report_dir, "index.html" ),  1, "Exists the report file";
+        ok -e path( $result_dir, "nytprof.out" ), "Exists nytprof.out";
+        ok -e path( $report_dir, "index.html" ),  "Exists the report file";
         isnt -d "report", 1, "Doesn't exist default report directory";
     };
 
@@ -57,12 +57,11 @@ subtest 'Change profiling_result_dir location and output filename' => sub {
 
         is $res->code, 200, "Response is returned successfully";
 
-        is -e path( $result_dir, "nytprof.$result_filename.out" ), 1,
-            "exists profile";
-        isnt -e "nytprof.out", 1, "Doesn't exist nytprof.out";
+        ok -e path( $result_dir, "nytprof.$result_filename.out" ),
+            "Exists profiling result file";
+        ok !-e "nytprof.out", "Doesn't exist nytprof.out";
 
-        isnt -e path( "report", "index.html" ), 1,
-            "Doesn't exist report file";
+        ok !-e path( "report", "index.html" ), "Doesn't exist report file";
     };
 
     unlink glob("nytprof*.out");

@@ -16,7 +16,7 @@ subtest 'is profiling result created' => sub {
 
         is $res->code, 200, "Response is returned successfully";
 
-        is -e "nytprof.out", 1, "Exists nytprof.out";
+        ok -e "nytprof.out", "Exists nytprof.out";
 
         my $regex = qr/nytprof\.\d+\-(\d+)\.\d+\.out/;
         for my $file ( glob("nytprof.*.out") ) {
