@@ -2,7 +2,7 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Plack::Util::Accessor qw(
     enable_profile

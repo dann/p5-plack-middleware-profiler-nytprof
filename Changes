@@ -1,5 +1,8 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.08 Sun Feb 04 18:16:00 2013
+    * Support streaming 
+
 0.07 Sun Feb 03 19:22:00 2013
     * Added some modules dependencis 
     * Added some tests
