@@ -19,6 +19,7 @@ use Plack::Util::Accessor qw(
 
 use File::Spec;
 use Time::HiRes qw(gettimeofday);
+use File::Which;
 
 use constant PROFILE_ID       => 'psgix.profiler.nytprof.reqid';
 use constant PROFILER_ENABLED => 'psgix.profiler.nytprof.enabled';
@@ -117,7 +118,7 @@ sub call {
                     return;
                 }
                 return $chunk;
-            }
+                }
         }
     );
 }
@@ -172,11 +173,11 @@ sub report {
 
     DB::enable_profile( $self->nullfile_path );
     DB::disable_profile();
-
     my $profiling_result_file = $self->profiling_result_file_path($env);
     return unless ( -f $profiling_result_file );
-
-    system "nytprofhtml", "-f", $profiling_result_file,
+    my $nytprofhtml_path = File::Which::which('nytprofhtml')
+        or die "Could not find nytprofhtml script. Ensure it's in your path";
+    system $nytprofhtml_path, "-f", $profiling_result_file,
         '-o', $self->report_dir->();
 }
 

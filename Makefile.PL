@@ -7,6 +7,7 @@ requires(
     'Plack'          => 0,
     'Devel::NYTProf' => 0,
     'Time::HiRes'    => 0,
+    'File::Which'    => 0,
 );
 test_requires(
     'Test::More'                   => '0.98',
