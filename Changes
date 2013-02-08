@@ -1,5 +1,8 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.10 Sun Feb 08 23:43:00 2013
+    * Check nytprofhtml script is in the PATH
+
 0.09 Sun Feb 04 22:26:00 2013
     * Refactor some tests and codes. 
 
