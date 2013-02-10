@@ -10,8 +10,8 @@ builder {
     profiling_result_dir => sub { '/tmp' },
     # Don't generate HTML report for production. Generate only NYTProf profiling output.
     enable_reporting     => 0,
-    # Do sampling, Select some processes or Select some paths using enable_profile callbak.
-    enable_profile => sub { 1 } 
+    # Do sampling, select some processes or select some paths using enable_profile callbak.
+    enable_profile       => sub { $$ % 2 == 0 }
     ;
  
   app->start;
