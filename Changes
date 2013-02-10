@@ -1,5 +1,9 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.13 Sun Feb 10 20:24:00 2013
+    * Don't load Devel::NYTProf if profiler isn't enabled. 
+      (Thanks to bayashi)
+
 0.12 Sun Feb 10 17:58:00 2013
     * Add nytprofhtml_path option 
 
