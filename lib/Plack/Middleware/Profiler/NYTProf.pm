@@ -36,6 +36,7 @@ sub prepare_app {
     $self->_setup_enable_profile;
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
+    $self->_setup_nytprofhtml_path;
 }
 
 sub _setup_profiling_file_paths {
@@ -65,6 +66,14 @@ sub _setup_report_dir {
     my $self = shift;
     $self->report_dir( sub {'report'} )
         unless is_code_ref( $self->report_dir );
+}
+
+sub _setup_nytprofhtml_path {
+    my $self = shift;
+    return if $self->nytprofhtml_path;
+    my $nytprofhtml_path = File::Which::which('nytprofhtml')
+        or die "Could not find nytprofhtml script. Ensure it's in your path";
+    $self->nytprofhtml_path($nytprofhtml_path);
 }
 
 sub _setup_profile_id {
@@ -182,10 +191,7 @@ sub report {
     DB::disable_profile();
     my $profiling_result_file = $self->profiling_result_file_path($env);
     return unless ( -f $profiling_result_file );
-    my $nytprofhtml_path
-        = $self->nytprofhtml_path || File::Which::which('nytprofhtml')
-        or die "Could not find nytprofhtml script. Ensure it's in your path";
-    system $nytprofhtml_path, "-f", $profiling_result_file,
+    system $self->nytprofhtml_path, "-f", $profiling_result_file,
         '-o', $self->report_dir->();
 }
 
