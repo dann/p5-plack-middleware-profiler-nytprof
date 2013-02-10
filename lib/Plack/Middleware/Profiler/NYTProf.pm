@@ -25,6 +25,8 @@ use File::Which;
 use constant PROFILE_ID       => 'psgix.profiler.nytprof.reqid';
 use constant PROFILER_ENABLED => 'psgix.profiler.nytprof.enabled';
 
+my %PROFILER_SETUPED;
+
 sub prepare_app {
     my $self = shift;
 
@@ -93,12 +95,10 @@ sub _setup_profiling_hooks {
 
 }
 
-my %PROFILER_SETUPED;
-
 sub call {
     my ( $self, $env ) = @_;
 
-    $self->_setup_profiler($env) unless $PROFILER_SETUPED{$$};
+    $self->_setup_profiler($env);
     $self->start_profiling_if_needed($env);
 
     my $res = $self->app->($env);
@@ -147,7 +147,9 @@ sub stop_profiling_and_report_if_needed {
 sub _setup_profiler {
     my ( $self, $env ) = @_;
 
-    $PROFILER_SETUPED{$$} = 1;
+    my $pid = $$;
+    return if $PROFILER_SETUPED{$pid};
+    $PROFILER_SETUPED{$pid} = 1;
 
     my $is_profiler_enabled = $self->enable_profile->($env);
     return unless $is_profiler_enabled;
