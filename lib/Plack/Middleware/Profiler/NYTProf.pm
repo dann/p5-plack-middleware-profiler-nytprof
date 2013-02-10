@@ -97,7 +97,7 @@ my %PROFILER_SETUPED;
 sub call {
     my ( $self, $env ) = @_;
 
-    $self->_setup_profiler unless $PROFILER_SETUPED{$$};
+    $self->_setup_profiler($env) unless $PROFILER_SETUPED{$$};
     $self->start_profiling_if_needed($env);
 
     my $res = $self->app->($env);
@@ -144,7 +144,12 @@ sub stop_profiling_and_report_if_needed {
 }
 
 sub _setup_profiler {
-    my $self = shift;
+    my ( $self, $env ) = @_;
+
+    $PROFILER_SETUPED{$$} = 1;
+
+    my $is_profiler_enabled = $self->enable_profile->($env);
+    return unless $is_profiler_enabled;
 
     $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
 
@@ -152,7 +157,6 @@ sub _setup_profiler {
     # so, we load Devel::NYTProf here.
     require Devel::NYTProf;
     DB::disable_profile();
-    $PROFILER_SETUPED{$$} = 1;
 }
 
 sub start_profiling {
