@@ -2,7 +2,7 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use Plack::Util::Accessor qw(
     enable_profile
@@ -11,6 +11,7 @@ use Plack::Util::Accessor qw(
     generate_profile_id
     profiling_result_dir
     report_dir
+    nytprofhtml_path
     profiling_result_file_name
     nullfile_name
     before_profile
@@ -175,7 +176,8 @@ sub report {
     DB::disable_profile();
     my $profiling_result_file = $self->profiling_result_file_path($env);
     return unless ( -f $profiling_result_file );
-    my $nytprofhtml_path = File::Which::which('nytprofhtml')
+    my $nytprofhtml_path
+        = $self->nytprofhtml_path || File::Which::which('nytprofhtml')
         or die "Could not find nytprofhtml script. Ensure it's in your path";
     system $nytprofhtml_path, "-f", $profiling_result_file,
         '-o', $self->report_dir->();
