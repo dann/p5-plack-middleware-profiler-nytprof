@@ -5,7 +5,7 @@ all_from 'lib/Plack/Middleware/Profiler/NYTProf.pm';
 requires(
     'parent'         => 0,
     'Plack'          => 0,
-    'Devel::NYTProf' => 0,
+    'Devel::NYTProf' => '5.06',
     'Time::HiRes'    => 0,
     'File::Which'    => 0,
 );
