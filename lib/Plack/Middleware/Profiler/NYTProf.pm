@@ -38,7 +38,7 @@ sub prepare_app {
     $self->_setup_report_dir;
     $self->_setup_nytprofhtml_path;
 
-    $ENV{NYTPROF} = $self->env_nytprof || 'start=no';
+    $ENV{NYTPROF} = $self->env_nytprof || 'start=no:sigexit=int';
 
     # NYTPROF environment variable is set in Devel::NYTProf::Core
     # so, we load Devel::NYTProf here.
