@@ -37,13 +37,6 @@ sub prepare_app {
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
     $self->_setup_nytprofhtml_path;
-
-    $ENV{NYTPROF} = $self->env_nytprof || 'start=no:sigexit=int';
-
-    # NYTPROF environment variable is set in Devel::NYTProf::Core
-    # so, we load Devel::NYTProf here.
-    require Devel::NYTProf;
-    DB::disable_profile();
 }
 
 sub _setup_profiling_file_paths {
@@ -166,6 +159,16 @@ sub _setup_profiler {
     my $pid = $$;
     return if $PROFILER_SETUPED{$pid};
     $PROFILER_SETUPED{$pid} = 1;
+
+    my $is_profiler_enabled = $self->enable_profile->($env);
+    return unless $is_profiler_enabled;
+
+    $ENV{NYTPROF} = $self->env_nytprof || 'start=no:sigexit=int';
+
+    # NYTPROF environment variable is set in Devel::NYTProf::Core
+    # so, we load Devel::NYTProf here.
+    require Devel::NYTProf;
+    DB::disable_profile();
 }
 
 sub start_profiling {
