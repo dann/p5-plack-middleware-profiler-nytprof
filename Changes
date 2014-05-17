@@ -1,5 +1,9 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.16 Tue May 17 16:54 2014
+    * Add preload method to load Devel::NYTProf in compile phase.
+      Thanks to bayashi
+
 0.15 Tue May 6 21:00 2014
     * Load Devel::NYTProf in prepare_app phase to support fork
     * Support only Devel::NYTProf 5.06 or higher 

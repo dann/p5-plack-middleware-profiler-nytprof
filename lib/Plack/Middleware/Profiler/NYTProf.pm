@@ -2,7 +2,7 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
-our $VERSION = '0.15';
+our $VERSION = '0.16';
 
 use Plack::Util::Accessor qw(
     enable_profile
@@ -31,8 +31,8 @@ my $NYTPROF_LOADED = 0;
 
 # Devel::NYTProf requires to be loaded in a compile phase.
 # So you should call this method in the BEGIN of your app.psgi with the NYTPROF environment variable.
-sub setup_env {
-    $ENV{NYTPROF} = $ENV{NYTPROF} || _default_env();
+sub preload {
+    $ENV{NYTPROF} ||= _default_env();
     require Devel::NYTProf;
     DB::disable_profile();
     $NYTPROF_LOADED = 1;
@@ -304,7 +304,7 @@ NOTE that Devel::NYTProf expects to be loaded in compile phase. It would be bett
     BEGIN {
         use Plack::Middleware::Profiler::NYTProf;
         $ENV{NYTPROF} = 'start=no:sigexit=int:stmts=0:savesrc=0';
-        Plack::Middleware::Profiler::NYTProf->setup_env;
+        Plack::Middleware::Profiler::NYTProf->preload;
     }
 
 If you set enable_reporting TRUE (you get a profile for each request), you should NOT load Devel::NYTProf manually.
