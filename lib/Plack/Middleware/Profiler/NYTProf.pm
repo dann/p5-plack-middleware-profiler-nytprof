@@ -27,6 +27,19 @@ use constant PROFILER_ENABLED => 'psgix.profiler.nytprof.enabled';
 
 my %PROFILER_SETUPED;
 
+my $NYTPROF_LOADED = 0;
+
+# Devel::NYTProf requires to be loaded in a compile phase.
+# So you should call this method in the BEGIN of your app.psgi with the NYTPROF environment variable.
+sub setup_env {
+    $ENV{NYTPROF} = $ENV{NYTPROF} || _default_env();
+    require Devel::NYTProf;
+    DB::disable_profile();
+    $NYTPROF_LOADED = 1;
+}
+
+sub _default_env { 'start=no:sigexit=int' }
+
 sub prepare_app {
     my $self = shift;
 
@@ -37,13 +50,6 @@ sub prepare_app {
     $self->_setup_enable_reporting;
     $self->_setup_report_dir;
     $self->_setup_nytprofhtml_path;
-
-    $ENV{NYTPROF} = $self->env_nytprof || 'start=no:sigexit=int';
-
-    # NYTPROF environment variable is set in Devel::NYTProf::Core
-    # so, we load Devel::NYTProf here.
-    require Devel::NYTProf;
-    DB::disable_profile();
 }
 
 sub _setup_profiling_file_paths {
@@ -166,6 +172,16 @@ sub _setup_profiler {
     my $pid = $$;
     return if $PROFILER_SETUPED{$pid};
     $PROFILER_SETUPED{$pid} = 1;
+
+    my $is_profiler_enabled = $self->enable_profile->($env);
+    return unless $is_profiler_enabled;
+
+    return if $NYTPROF_LOADED;
+
+    $ENV{NYTPROF} = $ENV{NYTPROF} || $self->env_nytprof || _default_env();
+    require Devel::NYTProf;
+    DB::disable_profile();
+    $NYTPROF_LOADED = 1;
 }
 
 sub start_profiling {
@@ -276,11 +292,22 @@ This option is optional.
 =item env_nytprof
 
 This option set to $ENV{NYTPROF}. See L<Devel::NYTProf>: NYTPROF ENVIRONMENT VARIABLE section. 
-Actualy, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazy for setting $ENV by option.
+By default, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazily.
 
 default
 
-    'start=no'
+    'start=no:sigexit=int'
+
+NOTE that Devel::NYTProf expects to be loaded in compile phase. It would be better to load manually like this
+
+    # in your app.psgi
+    BEGIN {
+        use Plack::Middleware::Profiler::NYTProf;
+        $ENV{NYTPROF} = 'start=no:sigexit=int:stmts=0:savesrc=0';
+        Plack::Middleware::Profiler::NYTProf->setup_env;
+    }
+
+If you set enable_reporting TRUE (you get a profile for each request), you should NOT load Devel::NYTProf manually.
 
 =item profiling_result_dir 
 
