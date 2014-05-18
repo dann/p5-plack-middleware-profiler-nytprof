@@ -1,5 +1,8 @@
 Revision history for Perl extension Plack::Middleware::Profiler::NYTProf
 
+0.17 Tue May 19 00:40 2014
+    * Preload Devel::NYTProf in example psgi files.
+
 0.16 Tue May 17 16:54 2014
     * Add preload method to load Devel::NYTProf in compile phase.
       Thanks to bayashi

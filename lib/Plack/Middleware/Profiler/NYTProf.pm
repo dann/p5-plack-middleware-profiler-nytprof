@@ -2,7 +2,7 @@ package Plack::Middleware::Profiler::NYTProf;
 use strict;
 use warnings;
 use parent qw(Plack::Middleware);
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
 use Plack::Util::Accessor qw(
     enable_profile
@@ -290,6 +290,8 @@ Devel::NYTProf doesn't generate HTML profiling report if you set 0 to this optio
 This option is optional.
 
 =item env_nytprof
+
+Warning: This option is DEPRECAED from 0.16. Use NYTPROF environment variable.
 
 This option set to $ENV{NYTPROF}. See L<Devel::NYTProf>: NYTPROF ENVIRONMENT VARIABLE section. 
 By default, Plack::Middleware::Profiler::NYTProf loads Devel::NYTProf lazily.
