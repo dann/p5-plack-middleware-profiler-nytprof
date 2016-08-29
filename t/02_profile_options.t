@@ -4,11 +4,7 @@ use Test::More;
 use Plack::Test;
 use Plack::Builder;
 use HTTP::Request::Common;
-use File::Which qw(which);
 use t::Util;
-
-my $bin = scalar which 'nytprofhtml';
-plan skip_all => 'nytprofhtml script is not in your PATH.' unless defined $bin;
 
 # FIXME Need to check profile format version 
 # The report isn't generated if profile format version isn't matched. 

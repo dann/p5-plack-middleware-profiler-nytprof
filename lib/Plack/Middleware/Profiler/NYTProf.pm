@@ -83,6 +83,7 @@ sub _setup_report_dir {
 
 sub _setup_nytprofhtml_path {
     my $self = shift;
+    return if !$self->enable_reporting;
     return if $self->nytprofhtml_path;
     my $nytprofhtml_path = File::Which::which('nytprofhtml')
         or die "Could not find nytprofhtml script. Ensure it's in your path";
@@ -162,7 +163,12 @@ sub stop_profiling_and_report_if_needed {
     return unless $is_profiler_enabled;
 
     $self->stop_profiling($env);
-    $self->report($env) if $self->enable_reporting;
+    if ($self->enable_reporting) {
+        if (!$self->nytprofhtml_path) {
+            $self->_setup_nytprofhtml_path;
+        }
+        $self->report($env);
+    }
     $self->after_profile->( $self, $env );
 }
 
